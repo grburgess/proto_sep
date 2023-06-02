@@ -7,4 +7,11 @@ __email__ = 'jburgess@mpe.mpg.de'
 
 
 from .utils.configuration import proto_sep_config, show_configuration
-from .utils.logging import update_logging_level, activate_warnings, silence_warnings
+from .utils.logging import (
+    activate_warnings,
+    silence_warnings,
+    update_logging_level,
+)
+
+
+from .protostars import Protostar, Group, Region, Catalog
