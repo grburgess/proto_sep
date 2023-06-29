@@ -17,6 +17,8 @@ class Protostar:
     location: SkyCoord
     inclination: float
     inclination_error: float
+    rmaj: float
+    tbol: float
 
 
 @dataclass
@@ -26,12 +28,14 @@ class Group:
     separation: np.ndarray = field(init=False)
     inclination_difference: np.ndarray = field(init=False)
     inclination_difference_error: np.ndarray = field(init=False)
+    rmaj: np.ndarray = field(init=False)
 
     def __post_init__(self) -> None:
         (
             self.separation,
             self.inclination_difference,
             self.inclination_difference_error,
+            self.rmaj,
         ) = self._compute_separations()
 
     def _compute_separations(self) -> Tuple[np.ndarray]:
@@ -39,6 +43,7 @@ class Group:
         seps = []
         inc_diff = []
         inc_diff_err = []
+        rmaj = []
 
         for ps in self.protostars[1:]:
 
@@ -55,7 +60,14 @@ class Group:
                 )
             )
 
-        return np.array(seps), np.array(inc_diff), np.array(inc_diff_err)
+            rmaj.append(max([self.protostars[0].rmaj, ps.rmaj]))
+
+            return (
+                np.array(seps),
+                np.array(inc_diff),
+                np.array(inc_diff_err),
+                np.array(rmaj),
+            )
 
 
 @dataclass
@@ -114,6 +126,8 @@ class Region:
                             ),
                             inclination=data.loc[name].Inc,
                             inclination_error=data.loc[name].Inc_err,
+                            rmaj=data.loc[name].Rmaj,
+                            tbol=data.loc[name].Tbol0,
                         )
                     )
 
@@ -151,6 +165,20 @@ class Catalog:
 
         return np.array(output)
 
+    def _walk_protostars(self, variable: str) -> np.ndarray:
+
+        output = []
+
+        for region in self.regions:
+
+            for group in region.groups:
+
+                for protostar in group.protostars:
+
+                    output.extend(asdict(protostar)[variable])
+
+        return np.array(output)
+
     @property
     def separation(self) -> np.ndarray:
         return self._walk_regions_and_groups("separation")
@@ -162,3 +190,15 @@ class Catalog:
     @property
     def inclination_difference_error(self) -> np.ndarray:
         return self._walk_regions_and_groups("inclination_difference_error")
+
+    @property
+    def rmaj(self) -> np.ndarray:
+        return self._walk_regions_and_groups("rmaj")
+
+    @property
+    def all_rmaj(self) -> np.ndarray:
+        return self._walk_protostars("rmaj")
+
+    @property
+    def all_tbol(self) -> np.ndarray:
+        return self._walk_protostars("tbol")
